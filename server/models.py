@@ -37,6 +37,17 @@ class GardenBed(db.Model):
     user = db.relationship("User", back_populates="beds")
     plants = db.relationship("Plant", back_populates="bed", cascade="all, delete-orphan")
 
+    def to_dict(self, include_plants=False):
+        data = {
+            "id": self.id,
+            "name": self.name,
+            "location": self.location,
+            "user_id": self.user_id,
+        }
+        if include_plants:
+            data["plants"] = [p.to_dict() for p in self.plants]
+        return data
+
 
 class Plant(db.Model):
     __tablename__ = "plants"
@@ -53,6 +64,17 @@ class Plant(db.Model):
     bed = db.relationship("GardenBed", back_populates="plants")
     user = db.relationship("User", back_populates="plants")
     care_logs = db.relationship("CareLog", back_populates="plant", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "variety": self.variety,
+            "planted_date": self.planted_date.isoformat() if self.planted_date else None,
+            "notes": self.notes,
+            "bed_id": self.bed_id,
+            "user_id": self.user_id,
+        }
 
 
 class CareLog(db.Model):
