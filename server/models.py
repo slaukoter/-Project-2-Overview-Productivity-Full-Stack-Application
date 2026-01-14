@@ -37,7 +37,7 @@ class GardenBed(db.Model):
     user = db.relationship("User", back_populates="beds")
     plants = db.relationship("Plant", back_populates="bed", cascade="all, delete-orphan")
 
-    def to_dict(self, include_plants=False):
+    def to_dict(self, include_plants=False, include_logs=False):
         data = {
             "id": self.id,
             "name": self.name,
@@ -45,8 +45,9 @@ class GardenBed(db.Model):
             "user_id": self.user_id,
         }
         if include_plants:
-            data["plants"] = [p.to_dict() for p in self.plants]
+            data["plants"] = [p.to_dict(include_logs=include_logs) for p in self.plants]
         return data
+
 
 
 class Plant(db.Model):
@@ -65,8 +66,8 @@ class Plant(db.Model):
     user = db.relationship("User", back_populates="plants")
     care_logs = db.relationship("CareLog", back_populates="plant", cascade="all, delete-orphan")
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_logs=False):
+        data = {
             "id": self.id,
             "name": self.name,
             "variety": self.variety,
@@ -75,6 +76,10 @@ class Plant(db.Model):
             "bed_id": self.bed_id,
             "user_id": self.user_id,
         }
+        if include_logs:
+            data["care_logs"] = [log.to_dict() for log in self.care_logs]
+        return data
+
 
 
 class CareLog(db.Model):
@@ -90,3 +95,15 @@ class CareLog(db.Model):
 
     plant = db.relationship("Plant", back_populates="care_logs")
     user = db.relationship("User", back_populates="care_logs")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "care_type": self.care_type,
+            "date": self.date.isoformat() if self.date else None,
+            "notes": self.notes,
+            "plant_id": self.plant_id,
+            "user_id": self.user_id,
+        }
+
+

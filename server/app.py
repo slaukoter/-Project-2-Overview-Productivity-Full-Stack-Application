@@ -3,6 +3,8 @@ from flask import request
 
 from config import create_app, db
 from models import GardenBed, Plant
+from models import CareLog
+
 
 app = create_app()
 
@@ -21,13 +23,13 @@ def health():
     return {"status": "ok"}, 200
 
 
-# --------------------
+
 # BEDS
-# --------------------
+
 @app.get("/beds")
 def get_beds():
     beds = GardenBed.query.all()
-    return [b.to_dict(include_plants=True) for b in beds], 200
+    return [b.to_dict(include_plants=True, include_logs=True) for b in beds], 200
 
 
 @app.post("/beds")
@@ -41,7 +43,7 @@ def create_bed():
     bed = GardenBed(
         name=name,
         location=data.get("location"),
-        user_id=1  # TEMP until auth
+        user_id=1  
     )
     db.session.add(bed)
     db.session.commit()
@@ -78,9 +80,9 @@ def delete_bed(id):
     return {}, 204
 
 
-# --------------------
+
 # PLANTS
-# --------------------
+
 @app.post("/plants")
 def create_plant():
     data = request.get_json() or {}
@@ -107,7 +109,7 @@ def create_plant():
         planted_date=planted_date,
         notes=data.get("notes"),
         bed_id=bed_id,
-        user_id=1  # TEMP until auth
+        user_id=1  
     )
 
     db.session.add(plant)
@@ -155,6 +157,71 @@ def delete_plant(id):
     db.session.delete(plant)
     db.session.commit()
     return {}, 204
+
+# Logs
+
+@app.post("/plants/<int:plant_id>/logs")
+def create_log(plant_id):
+    data = request.get_json() or {}
+
+    care_type = data.get("care_type")
+    if not care_type:
+        return {"error": "care_type is required"}, 400
+
+    plant = Plant.query.get(plant_id)
+    if not plant:
+        return {"error": "Plant not found"}, 404
+
+    log_date = parse_date(data.get("date"))
+    if data.get("date") and not log_date:
+        return {"error": "date must be YYYY-MM-DD"}, 400
+
+    log = CareLog(
+        care_type=care_type,
+        date=log_date or date.today(),
+        notes=data.get("notes"),
+        plant_id=plant_id,
+        user_id=1 
+    )
+
+    db.session.add(log)
+    db.session.commit()
+    return log.to_dict(), 201
+
+@app.patch("/logs/<int:id>")
+def update_log(id):
+    log = CareLog.query.get(id)
+    if not log:
+        return {"error": "Log not found"}, 404
+
+    data = request.get_json() or {}
+
+    if "care_type" in data and not data["care_type"]:
+        return {"error": "care_type cannot be empty"}, 400
+
+    if "date" in data:
+        new_date = parse_date(data.get("date"))
+        if data.get("date") and not new_date:
+            return {"error": "date must be YYYY-MM-DD"}, 400
+        log.date = new_date
+
+    log.care_type = data.get("care_type", log.care_type)
+    log.notes = data.get("notes", log.notes)
+
+    db.session.commit()
+    return log.to_dict(), 200
+
+@app.delete("/logs/<int:id>")
+def delete_log(id):
+    log = CareLog.query.get(id)
+    if not log:
+        return {"error": "Log not found"}, 404
+
+    db.session.delete(log)
+    db.session.commit()
+    return {}, 204
+
+
 
 
 if __name__ == "__main__":
