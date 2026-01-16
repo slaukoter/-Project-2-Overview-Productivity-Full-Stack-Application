@@ -1,38 +1,112 @@
 from datetime import date
-from flask import request
+from flask import request, session
 
 from config import create_app, db
 from models import GardenBed, Plant
 from models import CareLog
+from models import User
+
+from flask import Blueprint
+api = Blueprint("api", __name__)
+
 
 
 app = create_app()
+
+
 
 
 def parse_date(value):
     if not value:
         return None
     try:
-        return date.fromisoformat(value)  # expects "YYYY-MM-DD"
+        return date.fromisoformat(value)  # YYYY-MM-DD
     except ValueError:
         return None
 
+def current_user_id():
+    return session.get("user_id")
 
-@app.get("/health")
+@api.get("/health")
 def health():
     return {"status": "ok"}, 200
+
+@api.post("/register")
+def register():
+    data = request.get_json() or {}
+
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username:
+        return {"error": "username is required"}, 400
+    if not password:
+        return {"error": "password is required"}, 400
+
+    if User.query.filter_by(username=username).first():
+        return {"error": "username already taken"}, 409
+
+    user = User(username=username)
+    user.password_hash = password
+
+    db.session.add(user)
+    db.session.commit()
+
+    session["user_id"] = user.id
+    return {"id": user.id, "username": user.username}, 201
+
+@api.post("/login")
+def login():
+    data = request.get_json() or {}
+
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return {"error": "username and password are required"}, 400
+
+    user = User.query.filter_by(username=username).first()
+    if not user or not user.authenticate(password):
+        return {"error": "Invalid username or password"}, 401
+
+    session["user_id"] = user.id
+    return {"id": user.id, "username": user.username}, 200
+
+@api.get("/check_session")
+def check_session():
+    uid = session.get("user_id")
+    if not uid:
+        return {"error": "Not logged in"}, 401
+
+    user = User.query.get(uid)
+    if not user:
+        session.pop("user_id", None)
+        return {"error": "Not logged in"}, 401
+
+    return {"id": user.id, "username": user.username}, 200
+
+
+@api.delete("/logout")
+def logout():
+    session.pop("user_id", None)
+    return {}, 204
 
 
 
 # BEDS
 
-@app.get("/beds")
+@api.get("/beds")
 def get_beds():
-    beds = GardenBed.query.all()
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    beds = GardenBed.query.filter_by(user_id=uid).all()
+
     return [b.to_dict(include_plants=True, include_logs=True) for b in beds], 200
 
 
-@app.post("/beds")
+@api.post("/beds")
 def create_bed():
     data = request.get_json() or {}
 
@@ -40,22 +114,32 @@ def create_bed():
     if not name:
         return {"error": "name is required"}, 400
 
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
     bed = GardenBed(
         name=name,
         location=data.get("location"),
-        user_id=1  
+        user_id=uid
     )
+
     db.session.add(bed)
     db.session.commit()
 
     return bed.to_dict(include_plants=True), 201
 
 
-@app.patch("/beds/<int:id>")
+@api.patch("/beds/<int:id>")
 def update_bed(id):
-    bed = GardenBed.query.get(id)
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    bed = GardenBed.query.filter_by(id=id, user_id=uid).first()
     if not bed:
         return {"error": "Bed not found"}, 404
+
 
     data = request.get_json() or {}
 
@@ -69,9 +153,13 @@ def update_bed(id):
     return bed.to_dict(include_plants=True), 200
 
 
-@app.delete("/beds/<int:id>")
+@api.delete("/beds/<int:id>")
 def delete_bed(id):
-    bed = GardenBed.query.get(id)
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    bed = GardenBed.query.filter_by(id=id, user_id=uid).first()
     if not bed:
         return {"error": "Bed not found"}, 404
 
@@ -83,8 +171,12 @@ def delete_bed(id):
 
 # PLANTS
 
-@app.post("/plants")
+@api.post("/plants")
 def create_plant():
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
     data = request.get_json() or {}
 
     name = data.get("name")
@@ -95,7 +187,7 @@ def create_plant():
     if not bed_id:
         return {"error": "bed_id is required"}, 400
 
-    bed = GardenBed.query.get(bed_id)
+    bed = GardenBed.query.filter_by(id=bed_id, user_id=uid).first()
     if not bed:
         return {"error": "Bed not found"}, 404
 
@@ -109,17 +201,22 @@ def create_plant():
         planted_date=planted_date,
         notes=data.get("notes"),
         bed_id=bed_id,
-        user_id=1  
+        user_id=uid
     )
 
     db.session.add(plant)
     db.session.commit()
-    return plant.to_dict(), 201
+    return plant.to_dict(include_logs=True), 201
 
 
-@app.patch("/plants/<int:id>")
+
+@api.patch("/plants/<int:id>")
 def update_plant(id):
-    plant = Plant.query.get(id)
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    plant = Plant.query.filter_by(id=id, user_id=uid).first()
     if not plant:
         return {"error": "Plant not found"}, 404
 
@@ -139,18 +236,23 @@ def update_plant(id):
     plant.notes = data.get("notes", plant.notes)
 
     if "bed_id" in data:
-        bed = GardenBed.query.get(data["bed_id"])
+        bed = GardenBed.query.filter_by(id=data["bed_id"], user_id=uid).first()
         if not bed:
             return {"error": "Bed not found"}, 404
         plant.bed_id = data["bed_id"]
 
     db.session.commit()
-    return plant.to_dict(), 200
+    return plant.to_dict(include_logs=True), 200
 
 
-@app.delete("/plants/<int:id>")
+
+@api.delete("/plants/<int:id>")
 def delete_plant(id):
-    plant = Plant.query.get(id)
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    plant = Plant.query.filter_by(id=id, user_id=uid).first()
     if not plant:
         return {"error": "Plant not found"}, 404
 
@@ -160,15 +262,19 @@ def delete_plant(id):
 
 # Logs
 
-@app.post("/plants/<int:plant_id>/logs")
+@api.post("/plants/<int:plant_id>/logs")
 def create_log(plant_id):
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
     data = request.get_json() or {}
 
     care_type = data.get("care_type")
     if not care_type:
         return {"error": "care_type is required"}, 400
 
-    plant = Plant.query.get(plant_id)
+    plant = Plant.query.filter_by(id=plant_id, user_id=uid).first()
     if not plant:
         return {"error": "Plant not found"}, 404
 
@@ -181,16 +287,21 @@ def create_log(plant_id):
         date=log_date or date.today(),
         notes=data.get("notes"),
         plant_id=plant_id,
-        user_id=1 
+        user_id=uid
     )
 
     db.session.add(log)
     db.session.commit()
     return log.to_dict(), 201
 
-@app.patch("/logs/<int:id>")
+
+@api.patch("/logs/<int:id>")
 def update_log(id):
-    log = CareLog.query.get(id)
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    log = CareLog.query.filter_by(id=id, user_id=uid).first()
     if not log:
         return {"error": "Log not found"}, 404
 
@@ -211,9 +322,13 @@ def update_log(id):
     db.session.commit()
     return log.to_dict(), 200
 
-@app.delete("/logs/<int:id>")
+@api.delete("/logs/<int:id>")
 def delete_log(id):
-    log = CareLog.query.get(id)
+    uid = current_user_id()
+    if not uid:
+        return {"error": "Unauthorized"}, 401
+
+    log = CareLog.query.filter_by(id=id, user_id=uid).first()
     if not log:
         return {"error": "Log not found"}, 404
 
@@ -221,6 +336,7 @@ def delete_log(id):
     db.session.commit()
     return {}, 204
 
+app.register_blueprint(api, url_prefix="/api")
 
 
 
