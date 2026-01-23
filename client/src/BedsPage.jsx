@@ -286,9 +286,9 @@ export default function BedsPage({ beds, setBeds, loadBeds }) {
                                       setCareType(e.target.value)
                                     }
                                   >
-                                    <option value="water">water</option>
-                                    <option value="fertilize">fertilize</option>
-                                    <option value="prune">prune</option>
+                                    <option value="water">Water</option>
+                                    <option value="fertilize">Fertilize</option>
+                                    <option value="prune">Prune</option>
                                   </select>
 
                                   <input

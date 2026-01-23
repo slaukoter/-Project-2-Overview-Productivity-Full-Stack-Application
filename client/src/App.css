@@ -16,6 +16,8 @@ h1, h2, h3, h4, h5 {
   font-weight: 600;
 }
 
+
+
 /* Layout */
 .container {
   max-width: 900px;
@@ -132,3 +134,37 @@ h1, h2, h3, h4, h5 {
   background: #e5edf6;
   margin: 8px 0;
 }
+
+.page {
+  min-height: 100vh;
+  background: #f4f8fc;
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.container {
+  width: 100%;
+  max-width: 900px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.title {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 22px;
+  border: 1px solid #e5edf6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+

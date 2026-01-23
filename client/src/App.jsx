@@ -8,14 +8,17 @@ export default function App() {
   const [beds, setBeds] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  async function loadBeds(page = 1, perPage = 10) {
+    const data = await apiFetch(`/beds?page=${page}&per_page=${perPage}`);
+    setBeds(data.items);
+  }
+
   useEffect(() => {
     async function boot() {
       try {
         const u = await apiFetch("/check_session");
         setUser(u);
-
-        const data = await apiFetch("/beds?page=1&per_page=10");
-        setBeds(data.items);
+        await loadBeds();
       } catch {
         // not logged in
       } finally {
@@ -43,27 +46,24 @@ export default function App() {
 
   return (
     <div className="container">
-      <div className="header">
+      <header className="header">
         <h1 className="title">Garden Buddy</h1>
-        {user ? (
-          <span className="subtle">Logged in as {user.username}</span>
-        ) : (
-          <span className="subtle">Please log in</span>
-        )}
-      </div>
+        <span className="subtle">
+          {user ? `Logged in as ${user.username}` : "Please log in"}
+        </span>
+      </header>
 
       <div className="panel">
         {!user ? (
           <AuthForm
             onAuthed={async (u) => {
               setUser(u);
-              const data = await apiFetch("/beds?page=1&per_page=10");
-              setBeds(data.items);
+              await loadBeds();
             }}
           />
         ) : (
           <>
-            <div className="row" style={{ justifyContent: "space-between" }}>
+            <div className="row space-between">
               <span className="subtle">Session authenticated</span>
               <button className="button buttonDanger" onClick={logout}>
                 Logout
@@ -72,7 +72,7 @@ export default function App() {
 
             <div className="divider" />
 
-            <BedsPage beds={beds} setBeds={setBeds} />
+            <BedsPage beds={beds} setBeds={setBeds} loadBeds={loadBeds} />
           </>
         )}
       </div>
