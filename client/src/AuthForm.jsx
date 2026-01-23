@@ -2,7 +2,7 @@ import { useState } from "react";
 import { apiFetch } from "./api";
 
 export default function AuthForm({ onAuthed }) {
-  const [mode, setMode] = useState("login"); // or "register"
+  const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,24 +26,28 @@ export default function AuthForm({ onAuthed }) {
   }
 
   return (
-    <div style={{ maxWidth: 360 }}>
+    <div className="panel" style={{ maxWidth: 360, margin: "0 auto" }}>
       <h2>{mode === "login" ? "Log in" : "Register"}</h2>
 
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: 8 }}>
+      <form onSubmit={handleSubmit} className="stack">
         <input
-          placeholder="username"
+          className="input"
+          placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
         />
+
         <input
-          placeholder="password"
+          className="input"
+          placeholder="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
         />
-        <button disabled={loading}>
+
+        <button className="button buttonPrimary" disabled={loading}>
           {loading
             ? "Loading..."
             : mode === "login"
@@ -52,12 +56,13 @@ export default function AuthForm({ onAuthed }) {
         </button>
       </form>
 
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      {error && <p className="error">{error}</p>}
 
       <button
         type="button"
-        onClick={() => setMode(mode === "login" ? "register" : "login")}
+        className="button"
         style={{ marginTop: 8 }}
+        onClick={() => setMode(mode === "login" ? "register" : "login")}
       >
         Switch to {mode === "login" ? "Register" : "Login"}
       </button>

@@ -1,0 +1,134 @@
+/* Base */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  background: #f4f8fc;
+  color: #1f2937;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Layout */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+
+/* Cards */
+.card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #e5edf6;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Inputs */
+.input,
+.select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #c7d6ea;
+  font-size: 14px;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #ffffff;
+}
+
+/*  Buttons  */
+.button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #c7d6ea;
+  background: #ffffff;
+  color: #1f2937;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.button:hover {
+  background: #f0f6ff;
+}
+
+.buttonPrimary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.buttonPrimary:hover {
+  background: #1d4ed8;
+}
+
+.buttonDanger {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.buttonDanger:hover {
+  background: #fecaca;
+}
+
+/* ===== Lists ===== */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/*  Utility  */
+.badge {
+  background: #e0edff;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.subtle {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.divider {
+  height: 1px;
+  background: #e5edf6;
+  margin: 8px 0;
+}

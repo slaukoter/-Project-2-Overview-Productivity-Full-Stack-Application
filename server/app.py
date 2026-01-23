@@ -101,9 +101,32 @@ def get_beds():
     if not uid:
         return {"error": "Unauthorized"}, 401
 
-    beds = GardenBed.query.filter_by(user_id=uid).all()
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=10, type=int)
 
-    return [b.to_dict(include_plants=True, include_logs=True) for b in beds], 200
+    # safety limits so someone can’t request 1000 records
+    if page < 1:
+        page = 1
+    if per_page < 1:
+        per_page = 10
+    if per_page > 50:
+        per_page = 50
+
+    query = GardenBed.query.filter_by(user_id=uid).order_by(GardenBed.id.asc())
+    
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    items = [b.to_dict(include_plants=True, include_logs=True) for b in pagination.items]
+
+    return {
+        "items": items,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+    }, 200
 
 
 @api.post("/beds")

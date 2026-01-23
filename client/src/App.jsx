@@ -13,8 +13,9 @@ export default function App() {
       try {
         const u = await apiFetch("/check_session");
         setUser(u);
-        const b = await apiFetch("/beds");
-        setBeds(b);
+
+        const data = await apiFetch("/beds?page=1&per_page=10");
+        setBeds(data.items);
       } catch {
         // not logged in
       } finally {
@@ -30,30 +31,51 @@ export default function App() {
     setBeds([]);
   }
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="panel">
+          <p className="subtle">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1>Garden Buddy</h1>
+    <div className="container">
+      <div className="header">
+        <h1 className="title">Garden Buddy</h1>
+        {user ? (
+          <span className="subtle">Logged in as {user.username}</span>
+        ) : (
+          <span className="subtle">Please log in</span>
+        )}
+      </div>
 
-      {!user ? (
-        <AuthForm
-          onAuthed={async (u) => {
-            setUser(u);
-            const b = await apiFetch("/beds");
-            setBeds(b);
-          }}
-        />
-      ) : (
-        <>
-          <p>
-            Logged in as <strong>{user.username}</strong>{" "}
-            <button onClick={logout}>Logout</button>
-          </p>
+      <div className="panel">
+        {!user ? (
+          <AuthForm
+            onAuthed={async (u) => {
+              setUser(u);
+              const data = await apiFetch("/beds?page=1&per_page=10");
+              setBeds(data.items);
+            }}
+          />
+        ) : (
+          <>
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <span className="subtle">Session authenticated</span>
+              <button className="button buttonDanger" onClick={logout}>
+                Logout
+              </button>
+            </div>
 
-          <BedsPage beds={beds} setBeds={setBeds} />
-        </>
-      )}
+            <div className="divider" />
+
+            <BedsPage beds={beds} setBeds={setBeds} />
+          </>
+        )}
+      </div>
     </div>
   );
 }
