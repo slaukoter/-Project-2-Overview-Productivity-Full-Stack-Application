@@ -23,6 +23,8 @@ h1, h2, h3, h4, h5 {
   max-width: 900px;
   margin: 0 auto;
   padding: 24px;
+  width: 100%;
+  max-width: 900px;
 }
 
 .stack {
@@ -59,15 +61,7 @@ h1, h2, h3, h4, h5 {
   border-radius: 6px;
   border: 1px solid #c7d6ea;
   font-size: 14px;
-
-  background: #ffffff;
-  color: #1f2937;  
 }
-
-.input::placeholder {
-  color: #64748b;
-}
-
 
 .input:focus,
 .select:focus {
@@ -149,11 +143,6 @@ h1, h2, h3, h4, h5 {
   display: flex;
   justify-content: center;
   padding: 48px 16px;
-}
-
-.container {
-  width: 100%;
-  max-width: 900px;
 }
 
 .header {
