@@ -59,7 +59,15 @@ h1, h2, h3, h4, h5 {
   border-radius: 6px;
   border: 1px solid #c7d6ea;
   font-size: 14px;
+
+  background: #ffffff;
+  color: #1f2937;  
 }
+
+.input::placeholder {
+  color: #64748b;
+}
+
 
 .input:focus,
 .select:focus {
@@ -103,7 +111,7 @@ h1, h2, h3, h4, h5 {
   background: #fecaca;
 }
 
-/* ===== Lists ===== */
+/* Lists */
 .list {
   list-style: none;
   padding: 0;
